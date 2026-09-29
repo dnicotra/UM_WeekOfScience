@@ -1,0 +1,59 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and never cancel a run that is already publishing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      # Deliberately a marimo-only environment: if numpy/plotly are installed too,
+      # marimo rewrites double_slit.py and pins their versions, and a pinned numpy
+      # cannot be installed in the browser (Pyodide ships its own wasm32 build).
+      - name: Build the WebAssembly site
+        run: uvx marimo@0.25.0 export html-wasm double_slit.py -o site --mode run
+
+      - name: Guard against pinned dependencies
+        run: |
+          if grep -qE '(numpy|plotly)==' double_slit.py; then
+            echo "::error file=double_slit.py::Dependencies got pinned. Pyodide has no wasm32 wheel for a pinned numpy, so the page would fail on import. Unpin them in the script header."
+            exit 1
+          fi
+
+      - name: Check the export produced what Pages needs
+        run: |
+          test -f site/index.html || { echo "::error::no index.html in site/"; exit 1; }
+          test -f site/.nojekyll || touch site/.nojekyll   # keep Jekyll away from assets/
+          du -sh site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
