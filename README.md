@@ -6,11 +6,19 @@ together as one static site that runs entirely in the visitor's browser.
 | Notebook | What it shows |
 |---|---|
 | `double_slit.py` | The far-field (Fraunhofer) pattern of a double slit: two-slit interference under the single-slit diffraction envelope, as you change $\lambda$, the slit width $a$, the separation $d$ and the distance $L$ to the screen. Missing orders appear when $d/a$ is an integer. |
-| `water_waves.py` | A ripple tank. Plane waves meet a barrier with two gaps, and the field beyond it is summed from Huygens wavelets — exactly, with no far-field approximation. Press ▶ Play to set the water moving. |
+| `water_waves.py` | A ripple tank. Plane waves meet a barrier with two gaps, and the field beyond it is summed from Huygens wavelets — exactly, with no far-field approximation. It starts moving on its own and loops, with the time-averaged intensity plotted above it on the same horizontal scale. |
 
 The first is a closed-form formula, the second an explicit sum over sources, so the two
 disagree slightly near the barrier — the ripple tank plots the far-field orders as dotted
 lines next to the peaks the exact sum actually produces.
+
+The ripple tank animates on a `<canvas>` inside `mo.iframe` rather than with a plotting
+library. The field is time-harmonic, so one complex amplitude is computed in Python and every
+frame is a phase rotation of it done in the browser: that is what lets it start by itself (no
+library offers declarative autoplay), loop seamlessly, run at refresh rate with no Python per
+frame, and put the intensity plot on the same pixel grid as the tank so the two genuinely
+line up. It costs the zoom and hover that a plotting library gives for free; a crosshair
+readout stands in.
 
 ## Run them locally
 

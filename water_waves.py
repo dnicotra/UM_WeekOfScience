@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["marimo", "numpy", "plotly"]
+# dependencies = ["marimo", "numpy"]
 # ///
 
 import marimo
@@ -9,21 +9,20 @@ __generated_with = "0.25.0"
 app = marimo.App(width="medium")
 
 with app.setup:
+    import base64
+
     import marimo as mo
     import numpy as np
-    import plotly.graph_objects as go
 
     # The tank, in centimetres. The barrier sits at y = 0, the wave travels +y.
     X_MIN, X_MAX = -14.0, 14.0
     Y_MIN, Y_MAX = -5.0, 19.0
     BARRIER_HALF_T = 0.25
-    N_FRAMES = 16  # one period, so the loop is seamless
 
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(
-        r"""
+    mo.md(r"""
     # A ripple tank with two slits
 
     Plane waves roll in from the bottom, meet a barrier with two gaps, and each gap sends out
@@ -42,9 +41,10 @@ def _():
     far from it — unlike the far-field formula in the companion notebook. Reflection off the
     barrier is the one thing left out.
 
-    **Press ▶ Play on the figure to set the water moving.**
-    """
-    )
+    The water starts moving on its own and loops forever. Above the tank is the **time-averaged**
+    intensity along its far edge — what a long exposure of the surface would record — drawn on
+    the same horizontal scale, so each peak sits directly over the lobe that makes it.
+    """)
     return
 
 
@@ -59,11 +59,11 @@ def _():
     slit_width_cm = mo.ui.slider(
         0.2, 4.0, value=0.6, step=0.1, label="$a$ — slit width (cm)", show_value=True
     )
-    speed_ms = mo.ui.dropdown(
-        {"slow": 170, "normal": 95, "fast": 55}, value="normal", label="playback"
+    period_ms = mo.ui.dropdown(
+        {"slow": 2600, "normal": 1500, "fast": 850}, value="normal", label="one period lasts"
     )
     quality = mo.ui.dropdown(
-        {"fast": (8, 25000), "smooth": (12, 50000), "sharp (slow)": (18, 90000)},
+        {"fast": (8, 25000), "smooth": (12, 50000), "sharp": (18, 90000)},
         value="smooth",
         label="grid detail",
     )
@@ -72,17 +72,17 @@ def _():
     mo.hstack(
         [
             mo.vstack([wavelength_cm, slit_sep_cm, slit_width_cm]),
-            mo.vstack([speed_ms, quality, show_incoming]),
+            mo.vstack([period_ms, quality, show_incoming]),
         ],
         widths="equal",
         gap=2,
     )
     return (
+        period_ms,
         quality,
         show_incoming,
         slit_sep_cm,
         slit_width_cm,
-        speed_ms,
         wavelength_cm,
     )
 
@@ -106,7 +106,11 @@ def tank_grid(lam_cm, per_wavelength, max_points):
 
 @app.function(hide_code=True)
 def complex_field(xs, ys, sources, lam_cm, with_incoming):
-    """Time-independent amplitude: wavelets past the barrier, plane wave in front of it."""
+    """Time-independent amplitude: wavelets past the barrier, plane wave in front of it.
+
+    The animation is a phase rotation of this one array, which is why it can run at screen
+    refresh rate without Python doing anything per frame.
+    """
     k = 2.0 * np.pi / lam_cm
     X, Y = np.meshgrid(xs, ys)
 
@@ -121,18 +125,34 @@ def complex_field(xs, ys, sources, lam_cm, with_incoming):
     wavelets /= max(np.percentile(np.abs(wavelets[downstream]), 98.0), 1e-9)
 
     incoming = np.exp(1j * k * Y) if with_incoming else np.zeros_like(wavelets)
-    return np.where(downstream, wavelets, np.where(Y < -BARRIER_HALF_T, incoming, 0.0))
+    # The barrier band itself keeps the wavelets, so the openings show water moving through;
+    # the solid stretches are painted over it.
+    field = np.where(Y < -BARRIER_HALF_T, incoming, wavelets)
+
+    # Clamp the magnitude rather than the real part, so the saturated cells right at the
+    # openings keep their phase and still travel.
+    over = np.abs(field) > 1.0
+    field[over] /= np.abs(field[over])
+    return field
 
 
 @app.function(hide_code=True)
-def period_frames(field):
-    """One period of Re{U e^(-i omega t)}, quantised to int8 for a compact payload."""
-    return [
-        (np.clip(np.real(field * np.exp(-2j * np.pi * i / N_FRAMES)), -1.0, 1.0) * 100.0).astype(
-            np.int8
-        )
-        for i in range(N_FRAMES)
-    ]
+def as_int8_b64(values):
+    """Quantise [-1, 1] to int8 and base64 it, for embedding in the page."""
+    q = np.clip(np.round(values * 127.0), -127, 127).astype(np.int8)
+    return base64.b64encode(np.ascontiguousarray(q).tobytes()).decode("ascii")
+
+
+@app.function(hide_code=True)
+def colour_lut_b64(stops):
+    """256 RGB triples interpolated through the colour stops, base64'd for the canvas."""
+    rgb = np.array(
+        [[int(s[i : i + 2], 16) for i in (1, 3, 5)] for s in stops], dtype=float
+    )
+    at = np.linspace(0.0, 1.0, len(stops))
+    want = np.linspace(0.0, 1.0, 256)
+    table = np.stack([np.interp(want, at, rgb[:, c]) for c in range(3)], axis=1)
+    return base64.b64encode(table.round().astype(np.uint8).tobytes()).decode("ascii")
 
 
 @app.function(hide_code=True)
@@ -165,19 +185,18 @@ def _(quality, show_incoming, slit_sep_cm, slit_width_cm, wavelength_cm):
     xs, ys = tank_grid(lam, _per_wavelength, _budget)
     sources = slit_sources(sep, width, lam)
     field = complex_field(xs, ys, sources, lam, show_incoming.value)
-    frames = period_frames(field)
 
     # Time-averaged intensity read off the far edge of the tank, as on a screen.
     screen = np.abs(field[-1]) ** 2
     screen = screen / max(screen.max(), 1e-12)
-    return field, frames, lam, screen, sep, sources, width, xs, ys
+    return field, lam, screen, sep, sources, width, xs, ys
 
 
 @app.cell(hide_code=True)
 def _():
     # Diverging blue <-> red with a neutral midpoint: the surface height is signed, and zero
-    # means "flat water". The red arm is the blue ramp's hues held at matching OKLab lightness,
-    # so neither crests nor troughs read as the heavier half.
+    # means "flat water". The red arm is the blue ramp's steps held at matching OKLab
+    # lightness, so neither crests nor troughs read as the heavier half.
     _blue = ["#0d366b", "#184f95", "#256abf", "#3987e5", "#6da7ec", "#9ec5f4", "#cde2fb"]
     _red = ["#fad6d2", "#f1aea8", "#e4857d", "#d75852", "#b13f3c", "#892c2a", "#621b1a"]
 
@@ -189,180 +208,368 @@ def _():
     if _dark:
         # Selected for the dark surface, not flipped: the extremes stay bright and the flat
         # water sinks into the background.
-        _ramp = _blue[::-1] + ["#383835"] + _red[::-1]
         theme = dict(
-            surface="#1a1a19", ink="#ffffff", muted="#898781", grid="#2c2c2a",
-            barrier="#c3c2b7", series="#3987e5", series_soft="rgba(57, 135, 229, 0.22)",
-            template="plotly_dark",
+            stops=_blue[::-1] + ["#383835"] + _red[::-1],
+            surface="#1a1a19", ink="#ffffff", muted="#898781", hair="#2c2c2a",
+            barrier="#c3c2b7", series="#3987e5", series_soft="rgba(57, 135, 229, 0.20)",
         )
     else:
-        _ramp = _blue + ["#f0efec"] + _red
         theme = dict(
-            surface="#fcfcfb", ink="#0b0b0b", muted="#898781", grid="#e1e0d9",
-            barrier="#52514e", series="#2a78d6", series_soft="rgba(42, 120, 214, 0.18)",
-            template="plotly_white",
+            stops=_blue + ["#f0efec"] + _red,
+            surface="#fcfcfb", ink="#0b0b0b", muted="#898781", hair="#e1e0d9",
+            barrier="#52514e", series="#2a78d6", series_soft="rgba(42, 120, 214, 0.16)",
         )
-
-    water = [[i / (len(_ramp) - 1), c] for i, c in enumerate(_ramp)]
-    return theme, water
+    return (theme,)
 
 
 @app.cell(hide_code=True)
-def _(frames, sep, speed_ms, theme, water, width, xs, ys):
-    tank = go.Figure(
-        data=[
-            go.Heatmap(
-                z=frames[0],
-                x=xs,
-                y=ys,
-                zmin=-100,
-                zmax=100,
-                colorscale=water,
-                showscale=False,
-                zsmooth="best",
-                hovertemplate="x = %{x:.1f} cm<br>y = %{y:.1f} cm<br>height = %{z} %<extra></extra>",
-            )
-        ],
-        frames=[
-            go.Frame(data=[go.Heatmap(z=z)], traces=[0], name=str(i))
-            for i, z in enumerate(frames)
-        ],
-    )
+def _(theme):
+    # A self-contained page: the animation runs on a canvas so it can start by itself, loop
+    # seamlessly and share one x mapping between the intensity plot and the tank. Every frame
+    # is a phase rotation of the amplitude array computed above, done in the browser, so
+    # Python does nothing per frame.
+    RIPPLE_PAGE = """<!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <style>
+      html, body { margin: 0; padding: 0; background: __SURFACE__; overflow: hidden; }
+      body { font: 12px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: __INK__; }
+      #bar { display: flex; align-items: center; gap: 12px; height: 28px; padding: 4px 0 0 52px; }
+      #toggle { font: inherit; color: __INK__; background: transparent; cursor: pointer;
+                border: 1px solid __MUTED__; border-radius: 6px; padding: 3px 11px; }
+      #toggle:hover, #toggle:focus-visible { border-color: __SERIES__; }
+      #readout { color: __MUTED__; font-variant-numeric: tabular-nums; }
+      canvas { display: block; }
+    </style>
+    </head>
+    <body>
+    <div id="bar">
+      <button id="toggle" type="button">Pause</button>
+      <span id="readout"></span>
+    </div>
+    <canvas id="tank"></canvas>
+    <script type="application/json" id="ripple-data">__DATA__</script>
+    <script>
+    (function () {
+      "use strict";
 
-    for _x0, _x1 in barrier_segments(sep, width):
-        tank.add_shape(
-            type="rect",
-            x0=_x0,
-            x1=_x1,
-            y0=-BARRIER_HALF_T,
-            y1=BARRIER_HALF_T,
-            fillcolor=theme["barrier"],
-            line_width=0,
-            layer="above",
-        )
+      var D = JSON.parse(document.getElementById("ripple-data").textContent);
+      var T = D.theme;
+      var HINT = "loops continuously \\u2014 hover to read the intensity off";
 
-    tank.update_layout(
-        template=theme["template"],
-        height=620,
-        margin=dict(l=60, r=20, t=60, b=55),
-        paper_bgcolor=theme["surface"],
-        plot_bgcolor=theme["surface"],
-        font=dict(color=theme["ink"]),
-        updatemenus=[
-            dict(
-                type="buttons",
-                direction="left",
-                showactive=False,
-                x=0.0,
-                y=1.04,
-                xanchor="left",
-                yanchor="bottom",
-                pad=dict(r=8, t=0),
-                bgcolor=theme["surface"],
-                bordercolor=theme["muted"],
-                font=dict(color=theme["ink"], size=13),
-                buttons=[
-                    dict(
-                        label="▶  Play",
-                        method="animate",
-                        args=[
-                            None,
-                            dict(
-                                frame=dict(duration=speed_ms.value, redraw=True),
-                                fromcurrent=True,
-                                transition=dict(duration=0),
-                                mode="immediate",
-                            ),
-                        ],
-                    ),
-                    dict(
-                        label="⏸  Pause",
-                        method="animate",
-                        args=[
-                            [None],
-                            dict(
-                                frame=dict(duration=0, redraw=False),
-                                mode="immediate",
-                                transition=dict(duration=0),
-                            ),
-                        ],
-                    ),
-                ],
-            )
-        ],
+      function bytes(b64) {
+        var bin = atob(b64);
+        var u = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) { u[i] = bin.charCodeAt(i); }
+        return u;
+      }
+
+      var re = new Int8Array(bytes(D.re).buffer);
+      var im = new Int8Array(bytes(D.im).buffer);
+      var lut = bytes(D.lut);
+      var nx = D.nx;
+      var ny = D.ny;
+
+      var canvas = document.getElementById("tank");
+      var ctx = canvas.getContext("2d");
+      var toggle = document.getElementById("toggle");
+      var readout = document.getElementById("readout");
+      var bar = document.getElementById("bar");
+
+      var off = document.createElement("canvas");
+      off.width = nx;
+      off.height = ny;
+      var offCtx = off.getContext("2d");
+      var img = offCtx.createImageData(nx, ny);
+      var pix = img.data;
+      for (var a = 3; a < pix.length; a += 4) { pix[a] = 255; }
+
+      var PAD_L = 52, PAD_R = 16, PAD_T = 4, PAD_B = 34, PROFILE_H = 92, GAP = 10;
+      var geo = null;
+
+      function layout() {
+        var chrome = PAD_T + PROFILE_H + GAP + PAD_B;
+        var aspect = (D.yMax - D.yMin) / (D.xMax - D.xMin);
+        var available = document.documentElement.clientWidth - PAD_L - PAD_R;
+        var room = window.innerHeight - bar.offsetHeight - chrome - 4;
+        if (!(room > 200)) { room = 200; }
+        var w = Math.min(available, room / aspect);
+        if (!(w > 80)) { w = 80; }
+        var h = w * aspect;
+        var dpr = window.devicePixelRatio || 1;
+        canvas.style.width = (w + PAD_L + PAD_R) + "px";
+        canvas.style.height = (h + chrome) + "px";
+        canvas.width = Math.round((w + PAD_L + PAD_R) * dpr);
+        canvas.height = Math.round((h + chrome) * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        geo = { w: w, h: h, tankTop: PAD_T + PROFILE_H + GAP,
+                profileTop: PAD_T + 12, profileBase: PAD_T + PROFILE_H };
+      }
+
+      function xPix(xcm) { return PAD_L + (xcm - D.xMin) / (D.xMax - D.xMin) * geo.w; }
+      function yPix(ycm) { return geo.tankTop + (D.yMax - ycm) / (D.yMax - D.yMin) * geo.h; }
+
+      function renderField(phase) {
+        var c = Math.cos(phase), s = Math.sin(phase), p = 0;
+        for (var j = ny - 1; j >= 0; j--) {
+          var row = j * nx;
+          for (var i = 0; i < nx; i++) {
+            var v = (re[row + i] * c - im[row + i] * s) * 0.0078740157;
+            var k = (v + 1.0) * 127.5;
+            if (k < 0) { k = 0; } else if (k > 255) { k = 255; }
+            var q = (k | 0) * 3;
+            pix[p] = lut[q];
+            pix[p + 1] = lut[q + 1];
+            pix[p + 2] = lut[q + 2];
+            p += 4;
+          }
+        }
+        offCtx.putImageData(img, 0, 0);
+      }
+
+      function drawTank() {
+        // The samples are nodes, but drawImage treats them as cells, so stretch by half a
+        // cell each way: then column i lands exactly where the intensity plot puts sample i,
+        // and the ticks fall on the values they name. Clipped, as it now overhangs the panel.
+        var halfX = 0.5 * geo.w / (nx - 1), halfY = 0.5 * geo.h / (ny - 1);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(PAD_L, geo.tankTop, geo.w, geo.h);
+        ctx.clip();
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(off, 0, 0, nx, ny, PAD_L - halfX, geo.tankTop - halfY,
+                      geo.w + 2 * halfX, geo.h + 2 * halfY);
+        ctx.restore();
+        ctx.fillStyle = T.barrier;
+        var yTop = yPix(D.barrierT), yBot = yPix(-D.barrierT);
+        for (var i = 0; i < D.barrier.length; i++) {
+          var x0 = xPix(D.barrier[i][0]), x1 = xPix(D.barrier[i][1]);
+          ctx.fillRect(x0, yTop, x1 - x0, Math.max(yBot - yTop, 1.5));
+        }
+        ctx.strokeStyle = T.hair;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(PAD_L + 0.5, geo.tankTop + 0.5, geo.w - 1, geo.h - 1);
+      }
+
+      function drawProfile() {
+        var n = D.intensity.length, base = geo.profileBase, top = geo.profileTop;
+        ctx.setLineDash([2, 3]);
+        ctx.strokeStyle = T.muted;
+        ctx.fillStyle = T.muted;
+        ctx.lineWidth = 1;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        for (var i = 0; i < D.orders.length; i++) {
+          var px = Math.round(xPix(D.orders[i][1])) + 0.5;
+          ctx.beginPath();
+          ctx.moveTo(px, top);
+          ctx.lineTo(px, base);
+          ctx.stroke();
+          ctx.fillText("m=" + D.orders[i][0], px, top - 1);
+        }
+        ctx.setLineDash([]);
+
+        ctx.beginPath();
+        for (var j = 0; j < n; j++) {
+          var x = PAD_L + (j / (n - 1)) * geo.w;
+          var y = base - D.intensity[j] * (base - top);
+          if (j === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
+        }
+        ctx.strokeStyle = T.series;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.lineTo(PAD_L + geo.w, base);
+        ctx.lineTo(PAD_L, base);
+        ctx.closePath();
+        ctx.fillStyle = T.series_soft;
+        ctx.fill();
+
+        ctx.strokeStyle = T.hair;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(PAD_L, base + 0.5);
+        ctx.lineTo(PAD_L + geo.w, base + 0.5);
+        ctx.stroke();
+
+        ctx.fillStyle = T.muted;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillText("1", PAD_L - 7, top);
+        ctx.fillText("0", PAD_L - 7, base);
+      }
+
+      function drawAxes() {
+        ctx.strokeStyle = T.hair;
+        ctx.fillStyle = T.muted;
+        ctx.lineWidth = 1;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        var yb = geo.tankTop + geo.h;
+        for (var x = Math.ceil(D.xMin / 5) * 5; x <= D.xMax; x += 5) {
+          var px = Math.round(xPix(x)) + 0.5;
+          ctx.beginPath();
+          ctx.moveTo(px, yb);
+          ctx.lineTo(px, yb + 4);
+          ctx.stroke();
+          ctx.fillText(String(x), px, yb + 6);
+        }
+        ctx.fillText("across the tank, x (cm)", PAD_L + geo.w / 2, yb + 20);
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        for (var y = Math.ceil(D.yMin / 5) * 5; y <= D.yMax; y += 5) {
+          var py = Math.round(yPix(y)) + 0.5;
+          ctx.beginPath();
+          ctx.moveTo(PAD_L - 4, py);
+          ctx.lineTo(PAD_L, py);
+          ctx.stroke();
+          ctx.fillText(String(y), PAD_L - 7, py);
+        }
+        ctx.save();
+        ctx.translate(11, geo.tankTop + geo.h / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText("direction of travel, y (cm)", 0, 0);
+        ctx.restore();
+        ctx.save();
+        ctx.translate(11, (geo.profileTop + geo.profileBase) / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText("mean intensity", 0, 0);
+        ctx.restore();
+      }
+
+      var cursor = null;
+
+      function drawCursor() {
+        if (cursor === null) {
+          readout.textContent = HINT;
+          return;
+        }
+        var frac = (cursor - PAD_L) / geo.w;
+        var idx = Math.round(frac * (D.intensity.length - 1));
+        if (idx < 0) { idx = 0; }
+        if (idx > D.intensity.length - 1) { idx = D.intensity.length - 1; }
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+        ctx.strokeStyle = T.ink;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(Math.round(cursor) + 0.5, geo.profileTop);
+        ctx.lineTo(Math.round(cursor) + 0.5, geo.tankTop + geo.h);
+        ctx.stroke();
+        ctx.restore();
+        readout.textContent = "x = " + (D.xMin + frac * (D.xMax - D.xMin)).toFixed(1) +
+          " cm    mean intensity = " + D.intensity[idx].toFixed(2);
+      }
+
+      function paint() {
+        ctx.fillStyle = T.surface;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawTank();
+        drawProfile();
+        drawAxes();
+        drawCursor();
+      }
+
+      var phase = 0, last = 0, needsField = true, playing = true;
+      try {
+        if (window.matchMedia &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches) { playing = false; }
+      } catch (err) { playing = true; }
+
+      function label() { toggle.textContent = playing ? "Pause" : "Play"; }
+
+      toggle.addEventListener("click", function () {
+        playing = !playing;
+        label();
+      });
+
+      canvas.addEventListener("mousemove", function (ev) {
+        var box = canvas.getBoundingClientRect();
+        var px = ev.clientX - box.left;
+        cursor = (px >= PAD_L && px <= PAD_L + geo.w) ? px : null;
+      });
+      canvas.addEventListener("mouseleave", function () { cursor = null; });
+      window.addEventListener("resize", function () {
+        layout();
+        needsField = true;
+      });
+
+      function frame(now) {
+        if (!last) { last = now; }
+        var dt = now - last;
+        last = now;
+        if (playing) {
+          phase = (phase - 2 * Math.PI * (dt / D.periodMs)) % (2 * Math.PI);
+          needsField = true;
+        }
+        if (needsField) {
+          renderField(phase);
+          needsField = false;
+        }
+        paint();
+        requestAnimationFrame(frame);
+      }
+
+      label();
+      layout();
+      requestAnimationFrame(frame);
+    })();
+    </script>
+    </body>
+    </html>
+    """
+    ripple_page = (
+        RIPPLE_PAGE.replace("__SURFACE__", theme["surface"])
+        .replace("__INK__", theme["ink"])
+        .replace("__MUTED__", theme["muted"])
+        .replace("__SERIES__", theme["series"])
     )
-    tank.update_xaxes(
-        title_text="across the tank, x (cm)", constrain="domain", showgrid=False, zeroline=False
+    return (ripple_page,)
+
+
+@app.cell(hide_code=True)
+def _(field, lam, period_ms, ripple_page, screen, sep, theme, width, xs, ys):
+    import json
+
+    _payload = {
+        "re": as_int8_b64(np.real(field)),
+        "im": as_int8_b64(np.imag(field)),
+        "lut": colour_lut_b64(theme["stops"]),
+        "nx": len(xs),
+        "ny": len(ys),
+        "xMin": X_MIN,
+        "xMax": X_MAX,
+        "yMin": Y_MIN,
+        "yMax": Y_MAX,
+        "barrierT": BARRIER_HALF_T,
+        "barrier": barrier_segments(sep, width),
+        "orders": far_field_maxima(lam, sep, ys[-1]),
+        "intensity": [round(float(v), 4) for v in screen],
+        "periodMs": period_ms.value,
+        "screenY": float(ys[-1]),
+        "theme": {k: v for k, v in theme.items() if k != "stops"},
+    }
+
+    ripple_tank = mo.iframe(
+        ripple_page.replace("__DATA__", json.dumps(_payload)), width="100%", height="720"
     )
-    tank.update_yaxes(
-        title_text="direction of travel, y (cm)",
-        scaleanchor="x",
-        scaleratio=1,
-        constrain="domain",
-        showgrid=False,
-        zeroline=False,
-    )
-    tank
+    ripple_tank
     return
 
 
 @app.cell(hide_code=True)
-def _(lam, screen, sep, theme, xs, ys):
-    profile = go.Figure()
-    profile.add_trace(
-        go.Scatter(
-            x=xs,
-            y=screen,
-            mode="lines",
-            line=dict(color=theme["series"], width=2),
-            fill="tozeroy",
-            fillcolor=theme["series_soft"],
-            hovertemplate="x = %{x:.1f} cm<br>intensity = %{y:.2f}<extra></extra>",
-        )
-    )
-
-    for _m, _x in far_field_maxima(lam, sep, ys[-1]):
-        profile.add_vline(
-            x=_x,
-            line=dict(color=theme["muted"], width=1, dash="dot"),
-            annotation_text=f"m={_m}",
-            annotation_position="top",
-            annotation_font=dict(color=theme["muted"], size=10),
-        )
-
-    profile.update_layout(
-        template=theme["template"],
-        height=260,
-        margin=dict(l=60, r=20, t=40, b=55),
-        paper_bgcolor=theme["surface"],
-        plot_bgcolor=theme["surface"],
-        font=dict(color=theme["ink"]),
-        showlegend=False,
-        title=dict(
-            text=f"Time-averaged intensity along the far edge of the tank (y = {ys[-1]:.0f} cm)",
-            font=dict(size=13, color=theme["ink"]),
-            x=0.0,
-            xanchor="left",
-        ),
-    )
-    profile.update_xaxes(
-        title_text="across the tank, x (cm)",
-        range=[xs[0], xs[-1]],
-        gridcolor=theme["grid"],
-        zeroline=False,
-    )
-    profile.update_yaxes(
-        title_text="intensity (normalised)", range=[0, 1.05], gridcolor=theme["grid"], zeroline=False
-    )
-    profile
-    return
-
-
-@app.cell(hide_code=True)
-def _(lam, sep, sources, width, xs, ys):
+def _(lam, screen, sep, sources, width, xs, ys):
     _orders = far_field_maxima(lam, sep, ys[-1])
     _theta = np.degrees(np.arcsin(min(lam / sep, 1.0)))
-    _cells = f"{len(xs)} × {len(ys)}"
+    _peaks = [
+        xs[i]
+        for i in range(1, len(xs) - 1)
+        if screen[i] > screen[i - 1] and screen[i] >= screen[i + 1] and screen[i] > 0.02
+    ]
 
     _table = mo.md(
         f"""
@@ -370,9 +577,10 @@ def _(lam, sep, sources, width, xs, ys):
         |:--|--:|
         | angle of the first side maximum, $\\sin\\theta = \\lambda/d$ | **{_theta:.1f}°** |
         | orders reaching the far edge | **{len(_orders)}** (m = {_orders[0][0]} … {_orders[-1][0]}) |
+        | peaks the exact sum actually puts there | **{len(_peaks)}** |
         | $d/\\lambda$ | {sep / lam:.2f} |
         | Huygens sources across the two openings | {len(sources)} |
-        | grid | {_cells} cells, {N_FRAMES} frames per period |
+        | grid | {len(xs)} × {len(ys)} cells |
         """
         if _orders
         else f"""
@@ -380,7 +588,7 @@ def _(lam, sep, sources, width, xs, ys):
         |:--|--:|
         | $\\lambda/d$ | {lam / sep:.2f} — **larger than 1, so there are no side maxima at all** |
         | Huygens sources across the two openings | {len(sources)} |
-        | grid | {_cells} cells, {N_FRAMES} frames per period |
+        | grid | {len(xs)} × {len(ys)} cells |
         """
     )
 
@@ -399,8 +607,7 @@ def _(lam, sep, sources, width, xs, ys):
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(
-        r"""
+    mo.md(r"""
     ### Things to try
 
     - **Pull the slits apart** ($d$ up): the beams fan out into more, narrower lobes — the first
@@ -413,11 +620,10 @@ def _():
       Huygens sum.
     - **Longer wavelength** with $d$ fixed: everything spreads. Ripple tanks are run at long
       wavelengths for exactly this reason.
-    - Compare the dotted far-field orders on the lower plot with the peaks the exact sum
-      actually produces. Close to the barrier they do not quite agree, and that gap is the
-      difference between this notebook and the Fraunhofer one.
-    """
-    )
+    - Compare the dotted far-field orders with the peaks the exact sum actually produces. Close
+      to the barrier they do not quite agree, and that gap is the difference between this
+      notebook and the Fraunhofer one.
+    """)
     return
 
 
