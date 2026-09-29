@@ -25,24 +25,21 @@ jobs:
         with:
           enable-cache: true
 
-      # Deliberately a marimo-only environment: if numpy/plotly are installed too,
-      # marimo rewrites double_slit.py and pins their versions, and a pinned numpy
-      # cannot be installed in the browser (Pyodide ships its own wasm32 build).
-      - name: Build the WebAssembly site
-        run: uvx marimo@0.25.0 export html-wasm double_slit.py -o site --mode run
+      # Exports every notebook to WebAssembly and merges them into one site behind
+      # pages/index.html. See the script for why the export runs in a marimo-only
+      # environment.
+      - name: Build the site
+        run: tools/build_site.sh site
 
+      # The export rewrites the notebooks if numpy/plotly are importable, and the versions it
+      # writes cannot be installed in the browser. Checked after the build, since the build is
+      # what would do it.
       - name: Guard against pinned dependencies
         run: |
-          if grep -qE '(numpy|plotly)==' double_slit.py; then
-            echo "::error file=double_slit.py::Dependencies got pinned. Pyodide has no wasm32 wheel for a pinned numpy, so the page would fail on import. Unpin them in the script header."
+          if grep -nE '(numpy|plotly)==' double_slit.py water_waves.py; then
+            echo "::error::Dependencies got pinned. Pyodide ships its own wasm32 numpy, so a pinned version cannot be installed and the page would fail on import. Unpin them in the script headers."
             exit 1
           fi
-
-      - name: Check the export produced what Pages needs
-        run: |
-          test -f site/index.html || { echo "::error::no index.html in site/"; exit 1; }
-          test -f site/.nojekyll || touch site/.nojekyll   # keep Jekyll away from assets/
-          du -sh site
 
       - uses: actions/upload-pages-artifact@v3
         with:

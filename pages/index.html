@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Waves through two slits</title>
+<meta name="description" content="Two interactive marimo notebooks on two-slit interference: the far-field pattern of light, and a ripple tank you can set moving.">
+<style>
+  :root {
+    color-scheme: light;
+    --plane:   #f9f9f7;
+    --panel:   #fcfcfb;
+    --ink:     #0b0b0b;
+    --muted:   #52514e;
+    --faint:   #898781;
+    --hair:    rgba(11, 11, 11, 0.10);
+    --accent:  #2a78d6;
+    --accent-2:#b13f3c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --plane:  #0d0d0d;
+      --panel:  #1a1a19;
+      --ink:    #ffffff;
+      --muted:  #c3c2b7;
+      --faint:  #898781;
+      --hair:   rgba(255, 255, 255, 0.10);
+      --accent: #3987e5;
+      --accent-2:#d75852;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 64px 16px 80px;
+    background: var(--plane);
+    color: var(--ink);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 12px; letter-spacing: -0.01em; }
+  .lede { color: var(--muted); margin: 0 0 40px; max-width: 58ch; }
+  .cards { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  a.card {
+    display: block;
+    padding: 22px 22px 18px;
+    background: var(--panel);
+    border: 1px solid var(--hair);
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 120ms ease, transform 120ms ease;
+  }
+  a.card:hover, a.card:focus-visible { border-color: var(--accent); transform: translateY(-2px); }
+  a.card h2 { font-size: 1.05rem; margin: 14px 0 6px; }
+  a.card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+  svg { display: block; width: 100%; height: auto; }
+  .note {
+    margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--hair);
+    color: var(--faint); font-size: 0.85rem;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Waves through two slits</h1>
+  <p class="lede">
+    Two interactive notebooks built for the Week of Science. Both run entirely in your browser —
+    there is no server, so the first load spends a few seconds fetching a Python runtime.
+  </p>
+
+  <div class="cards">
+    <a class="card" href="./double-slit.html">
+      <svg viewBox="0 0 200 74" role="img" aria-label="Double-slit intensity pattern with its diffraction envelope">
+        <polyline points="0.0,69.0 0.6,69.1 1.3,69.2 1.9,69.4 2.5,69.6 3.1,69.8 3.8,69.9 4.4,70.0 5.0,70.0 5.6,69.9 6.3,69.8 6.9,69.7 7.5,69.6 8.2,69.6 8.8,69.6 9.4,69.6 10.0,69.7 10.7,69.8 11.3,69.9 11.9,69.9 12.5,70.0 13.2,70.0 13.8,70.0 14.4,70.0 15.0,70.0 15.7,70.0 16.3,70.0 16.9,70.0 17.6,70.0 18.2,70.0 18.8,70.0 19.4,69.9 20.1,69.9 20.7,69.9 21.3,70.0 21.9,70.0 22.6,70.0 23.2,70.0 23.8,69.9 24.5,69.8 25.1,69.6 25.7,69.4 26.3,69.2 27.0,69.0 27.6,68.9 28.2,68.9 28.8,69.0 29.5,69.2 30.1,69.5 30.7,69.8 31.3,70.0 32.0,70.0 32.6,69.9 33.2,69.5 33.9,69.0 34.5,68.5 35.1,67.9 35.7,67.5 36.4,67.3 37.0,67.4 37.6,67.7 38.2,68.2 38.9,68.8 39.5,69.4 40.1,69.8 40.8,70.0 41.4,69.9 42.0,69.6 42.6,69.1 43.3,68.5 43.9,68.0 44.5,67.6 45.1,67.5 45.8,67.6 46.4,67.9 47.0,68.4 47.6,68.9 48.3,69.4 48.9,69.8 49.5,70.0 50.2,70.0 50.8,69.9 51.4,69.7 52.0,69.6 52.7,69.5 53.3,69.4 53.9,69.5 54.5,69.6 55.2,69.7 55.8,69.8 56.4,69.9 57.1,70.0 57.7,70.0 58.3,70.0 58.9,70.0 59.6,70.0 60.2,70.0 60.8,69.9 61.4,69.8 62.1,69.6 62.7,69.3 63.3,68.9 63.9,68.6 64.6,68.4 65.2,68.4 65.8,68.6 66.5,69.0 67.1,69.5 67.7,69.9 68.3,70.0 69.0,69.6 69.6,68.5 70.2,66.9 70.8,64.7 71.5,62.3 72.1,60.1 72.7,58.5 73.4,58.0 74.0,58.7 74.6,60.5 75.2,63.2 75.9,66.1 76.5,68.6 77.1,69.9 77.7,69.4 78.4,66.8 79.0,62.2 79.6,56.2 80.3,49.6 80.9,43.7 81.5,39.5 82.1,37.9 82.8,39.4 83.4,43.8 84.0,50.4 84.6,57.8 85.3,64.5 85.9,68.9 86.5,69.9 87.1,66.8 87.8,59.8 88.4,50.0 89.0,38.9 89.7,28.5 90.3,20.7 90.9,17.1 91.5,18.5 92.2,24.6 92.8,34.4 93.4,46.1 94.0,57.3 94.7,65.8 95.3,69.8 95.9,68.4 96.6,61.7 97.2,50.8 97.8,37.6 98.4,24.7 99.1,14.4 99.7,8.7 100.3,8.7 100.9,14.4 101.6,24.7 102.2,37.6 102.8,50.8 103.4,61.7 104.1,68.4 104.7,69.8 105.3,65.8 106.0,57.3 106.6,46.1 107.2,34.4 107.8,24.6 108.5,18.5 109.1,17.1 109.7,20.7 110.3,28.5 111.0,38.9 111.6,50.0 112.2,59.8 112.9,66.8 113.5,69.9 114.1,68.9 114.7,64.5 115.4,57.8 116.0,50.4 116.6,43.8 117.2,39.4 117.9,37.9 118.5,39.5 119.1,43.7 119.7,49.6 120.4,56.2 121.0,62.2 121.6,66.8 122.3,69.4 122.9,69.9 123.5,68.6 124.1,66.1 124.8,63.2 125.4,60.5 126.0,58.7 126.6,58.0 127.3,58.5 127.9,60.1 128.5,62.3 129.2,64.7 129.8,66.9 130.4,68.5 131.0,69.6 131.7,70.0 132.3,69.9 132.9,69.5 133.5,69.0 134.2,68.6 134.8,68.4 135.4,68.4 136.1,68.6 136.7,68.9 137.3,69.3 137.9,69.6 138.6,69.8 139.2,69.9 139.8,70.0 140.4,70.0 141.1,70.0 141.7,70.0 142.3,70.0 142.9,70.0 143.6,69.9 144.2,69.8 144.8,69.7 145.5,69.6 146.1,69.5 146.7,69.4 147.3,69.5 148.0,69.6 148.6,69.7 149.2,69.9 149.8,70.0 150.5,70.0 151.1,69.8 151.7,69.4 152.4,68.9 153.0,68.4 153.6,67.9 154.2,67.6 154.9,67.5 155.5,67.6 156.1,68.0 156.7,68.5 157.4,69.1 158.0,69.6 158.6,69.9 159.2,70.0 159.9,69.8 160.5,69.4 161.1,68.8 161.8,68.2 162.4,67.7 163.0,67.4 163.6,67.3 164.3,67.5 164.9,67.9 165.5,68.5 166.1,69.0 166.8,69.5 167.4,69.9 168.0,70.0 168.7,70.0 169.3,69.8 169.9,69.5 170.5,69.2 171.2,69.0 171.8,68.9 172.4,68.9 173.0,69.0 173.7,69.2 174.3,69.4 174.9,69.6 175.5,69.8 176.2,69.9 176.8,70.0 177.4,70.0 178.1,70.0 178.7,70.0 179.3,69.9 179.9,69.9 180.6,69.9 181.2,70.0 181.8,70.0 182.4,70.0 183.1,70.0 183.7,70.0 184.3,70.0 185.0,70.0 185.6,70.0 186.2,70.0 186.8,70.0 187.5,70.0 188.1,69.9 188.7,69.9 189.3,69.8 190.0,69.7 190.6,69.6 191.2,69.6 191.8,69.6 192.5,69.6 193.1,69.7 193.7,69.8 194.4,69.9 195.0,70.0 195.6,70.0 196.2,69.9 196.9,69.8 197.5,69.6 198.1,69.4 198.7,69.2 199.4,69.1 200.0,69.0" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+        <line x1="0" y1="70" x2="200" y2="70" stroke="var(--hair)" stroke-width="1"/>
+      </svg>
+      <h2>Interference &amp; diffraction of light</h2>
+      <p>The far-field pattern of a double slit, as you change the wavelength, the slit width, the
+         separation and the distance to the screen. Watch orders go missing.</p>
+    </a>
+
+    <a class="card" href="./water-waves.html">
+      <svg viewBox="0 0 200 74" role="img" aria-label="Circular wavefronts spreading from two slits in a barrier">
+        <g clip-path="url(#below)" fill="none" stroke="var(--accent-2)" stroke-width="1.1" opacity="0.75">
+        <circle cx="74" cy="66" r="7" />
+        <circle cx="74" cy="66" r="16" />
+        <circle cx="74" cy="66" r="25" />
+        <circle cx="74" cy="66" r="34" />
+        <circle cx="74" cy="66" r="43" />
+        <circle cx="74" cy="66" r="52" />
+        <circle cx="74" cy="66" r="61" />
+        <circle cx="74" cy="66" r="70" />
+        <circle cx="74" cy="66" r="79" />
+        <circle cx="74" cy="66" r="88" />
+        <circle cx="126" cy="66" r="7" />
+        <circle cx="126" cy="66" r="16" />
+        <circle cx="126" cy="66" r="25" />
+        <circle cx="126" cy="66" r="34" />
+        <circle cx="126" cy="66" r="43" />
+        <circle cx="126" cy="66" r="52" />
+        <circle cx="126" cy="66" r="61" />
+        <circle cx="126" cy="66" r="70" />
+        <circle cx="126" cy="66" r="79" />
+        <circle cx="126" cy="66" r="88" />
+        </g>
+        <clipPath id="below"><rect x="0" y="0" width="200" height="63"/></clipPath>
+        <g stroke="var(--muted)" stroke-width="3.4">
+          <line x1="0" y1="65" x2="68" y2="65"/>
+          <line x1="80" y1="65" x2="120" y2="65"/>
+          <line x1="132" y1="65" x2="200" y2="65"/>
+        </g>
+      </svg>
+      <h2>A ripple tank you can start</h2>
+      <p>Plane waves hit a barrier with two gaps and the circular wavelets beyond it cross and
+         add. Press play and vary the gap between the slits.</p>
+    </a>
+  </div>
+
+  <p class="note">
+    Made with <a href="https://marimo.io" style="color: var(--accent)">marimo</a>, exported to
+    WebAssembly. Source: <code>double_slit.py</code> and <code>water_waves.py</code>.
+  </p>
+</main>
+</body>
+</html>
