@@ -21,7 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v10
+      # Pinned exactly: astral-sh stopped publishing a floating major tag after v7.
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
           # There is no lockfile to key the cache on; the marimo pin lives in the build
