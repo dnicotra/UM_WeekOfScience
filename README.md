@@ -1,10 +1,13 @@
-# Waves through two slits
+# Playing with waves
 
-Two interactive [marimo](https://marimo.io) notebooks for the Week of Science, published
-together as one static site that runs entirely in the visitor's browser.
+Three interactive [marimo](https://marimo.io) notebooks for the Weekend of Science, written for
+children aged 6–14 and their parents, in English and Dutch. They are published together as
+one static site that runs entirely in the visitor's browser. The text is kept plain; each
+notebook keeps its formulas in a collapsed "For grown-ups" section at the bottom.
 
 | Notebook | What it shows |
 |---|---|
+| `what_is_a_wave.py` | A travelling sine wave seen from the side, with a duck that only bobs up and down as it passes. Sliders for the amplitude and the wavelength; the speed is fixed, so shorter waves make the duck bob faster. Animated on a canvas, like the ripple tank. |
 | `double_slit.py` | The far-field (Fraunhofer) pattern of a double slit: two-slit interference under the single-slit diffraction envelope, as you change $\lambda$, the slit width $a$, the separation $d$ and the distance $L$ to the screen. Missing orders appear when $d/a$ is an integer. |
 | `water_waves.py` | A ripple tank. Plane waves meet a barrier with two gaps, and the field beyond it is summed from Huygens wavelets — exactly, with no far-field approximation. It starts moving on its own and loops, with the time-averaged intensity plotted above it on the same horizontal scale. |
 
@@ -30,19 +33,36 @@ uvx marimo edit --sandbox double_slit.py     # edit
 uvx marimo run  --sandbox water_waves.py     # present, code hidden
 ```
 
+## Two languages, one source
+
+Each notebook holds its English and Dutch text side by side, as `tr(en=..., nl=...)`, and
+shows the language named on the `LANG = "en"` line of its setup cell. Numbers follow it too
+(`num()` writes 2,50 in Dutch). The build exports every notebook once per language by
+rewriting that line in a copy, so the code exists once and only the wording can differ.
+
+To preview Dutch locally, set `LANG = "nl"` in the editor, and set it back before
+committing: the build refuses a notebook whose line does not say `"en"`. Adding a language
+means another argument to `tr`, and another line in the build's `NOTEBOOKS` list.
+
 ## The published site
 
-`tools/build_site.sh` exports each notebook to WebAssembly and merges them into one tree:
+`tools/build_site.sh` exports each notebook to WebAssembly once per language and merges
+them into one tree:
 
 ```
-site/index.html          <- pages/index.html, the landing page
-site/double-slit.html
-site/water-waves.html
-site/assets/             <- marimo's frontend, one copy shared by both pages
+site/index.html                                    <- pages/index.html, the landing page
+site/what-is-a-wave.html   site/wat-is-een-golf.html
+site/water-waves.html      site/watergolven.html
+site/double-slit.html      site/dubbele-spleet.html
+site/assets/                                       <- marimo's frontend, shared by all six
 ```
 
-Both exports ship the same content-hashed frontend, so merging them leaves one 27 MB copy
-instead of two. `tools/check_site.py` then verifies that every relative reference on every page
+The Dutch pages get Dutch names because the export titles a page after its file name. The
+landing page carries both languages and shows one: the visitor's choice if they made one,
+otherwise Dutch for a Dutch browser and English for everyone else.
+
+All six exports ship the same content-hashed frontend, so merging them leaves one 27 MB copy
+instead of six. `tools/check_site.py` then verifies that every relative reference on every page
 resolves inside the tree, which is the failure mode that merging could introduce.
 
 Pushing to `main` runs that script and publishes the result
