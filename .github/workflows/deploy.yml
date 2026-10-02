@@ -40,7 +40,7 @@ jobs:
       # what would do it.
       - name: Guard against pinned dependencies
         run: |
-          if grep -nE '(numpy|plotly)==' double_slit.py water_waves.py; then
+          if grep -nE '(numpy|plotly)==' *.py; then
             echo "::error::Dependencies got pinned. Pyodide ships its own wasm32 numpy, so a pinned version cannot be installed and the page would fail on import. Unpin them in the script headers."
             exit 1
           fi

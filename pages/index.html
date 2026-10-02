@@ -1,10 +1,24 @@
 <!doctype html>
-<html lang="en">
+<html lang="nl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Waves through two slits</title>
-<meta name="description" content="Two interactive marimo notebooks on two-slit interference: the far-field pattern of light, and a ripple tank you can set moving.">
+<title>Spelen met golven · Playing with waves</title>
+<meta name="description" content="Drie experimenten met golven om mee te spelen in je browser. Three experiments with waves to play with in your browser.">
+<script>
+  // Pick the language before the first paint, so the page never shows both. A choice made with
+  // the switch is remembered; otherwise Dutch browsers get Dutch and everyone else English.
+  (function () {
+    var lang = null;
+    try { lang = localStorage.getItem("lang"); } catch (err) { lang = null; }
+    if (lang !== "nl" && lang !== "en") {
+      var nav = (navigator.languages && navigator.languages[0]) || navigator.language || "";
+      lang = /^nl\b/i.test(nav) ? "nl" : "en";
+    }
+    document.documentElement.setAttribute("data-lang", lang);
+    document.documentElement.lang = lang;
+  })();
+</script>
 <style>
   :root {
     color-scheme: light;
@@ -33,15 +47,15 @@
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    padding: 64px 16px 80px;
+    padding: 32px 16px 80px;
     background: var(--plane);
     color: var(--ink);
     font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
   }
-  main { max-width: 760px; margin: 0 auto; }
+  main { max-width: 960px; margin: 0 auto; }
   h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 12px; letter-spacing: -0.01em; }
   .lede { color: var(--muted); margin: 0 0 40px; max-width: 58ch; }
-  .cards { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .cards { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
   a.card {
     display: block;
     padding: 22px 22px 18px;
@@ -61,30 +75,59 @@
     color: var(--faint); font-size: 0.85rem;
   }
   code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; }
+
+  /* Language. Without JavaScript nothing is hidden and both versions show, one after the other. */
+  :root[data-lang="nl"] .l10n[lang="en"],
+  :root[data-lang="en"] .l10n[lang="nl"] { display: none; }
+  :root:not([data-lang]) .switch { display: none; }
+  :root:not([data-lang]) .l10n + .l10n { margin-top: 72px; }
+  .switch { display: flex; justify-content: flex-end; gap: 6px; margin: 0 0 32px; }
+  .switch button {
+    font: inherit; font-size: 0.85rem; color: var(--muted); background: transparent;
+    border: 1px solid var(--hair); border-radius: 999px; padding: 4px 12px; cursor: pointer;
+  }
+  .switch button[aria-pressed="true"] { color: var(--ink); border-color: var(--accent); }
+  .switch button:hover, .switch button:focus-visible { border-color: var(--accent); }
 </style>
 </head>
 <body>
 <main>
-  <h1>Waves through two slits</h1>
+  <nav class="switch" aria-label="Taal / Language">
+    <button type="button" data-set-lang="nl" lang="nl">Nederlands</button>
+    <button type="button" data-set-lang="en" lang="en">English</button>
+  </nav>
+
+  <div class="l10n" lang="nl">
+  <h1>Spelen met golven</h1>
   <p class="lede">
-    Two interactive notebooks built for the Week of Science. Both run entirely in your browser —
-    there is no server, so the first load spends a few seconds fetching a Python runtime.
+    Wat is een golf eigenlijk? En wat gebeurt er als water of licht door twee piepkleine
+    openingen moet? Hier zijn drie experimenten om mee te spelen, gemaakt voor het Weekend van de
+    Wetenschap. Ze werken gewoon in je browser; de eerste keer duurt het een paar seconden
+    voordat ze klaar zijn.
   </p>
 
   <div class="cards">
-    <a class="card" href="./double-slit.html">
-      <svg viewBox="0 0 200 74" role="img" aria-label="Double-slit intensity pattern with its diffraction envelope">
-        <polyline points="0.0,69.0 0.6,69.1 1.3,69.2 1.9,69.4 2.5,69.6 3.1,69.8 3.8,69.9 4.4,70.0 5.0,70.0 5.6,69.9 6.3,69.8 6.9,69.7 7.5,69.6 8.2,69.6 8.8,69.6 9.4,69.6 10.0,69.7 10.7,69.8 11.3,69.9 11.9,69.9 12.5,70.0 13.2,70.0 13.8,70.0 14.4,70.0 15.0,70.0 15.7,70.0 16.3,70.0 16.9,70.0 17.6,70.0 18.2,70.0 18.8,70.0 19.4,69.9 20.1,69.9 20.7,69.9 21.3,70.0 21.9,70.0 22.6,70.0 23.2,70.0 23.8,69.9 24.5,69.8 25.1,69.6 25.7,69.4 26.3,69.2 27.0,69.0 27.6,68.9 28.2,68.9 28.8,69.0 29.5,69.2 30.1,69.5 30.7,69.8 31.3,70.0 32.0,70.0 32.6,69.9 33.2,69.5 33.9,69.0 34.5,68.5 35.1,67.9 35.7,67.5 36.4,67.3 37.0,67.4 37.6,67.7 38.2,68.2 38.9,68.8 39.5,69.4 40.1,69.8 40.8,70.0 41.4,69.9 42.0,69.6 42.6,69.1 43.3,68.5 43.9,68.0 44.5,67.6 45.1,67.5 45.8,67.6 46.4,67.9 47.0,68.4 47.6,68.9 48.3,69.4 48.9,69.8 49.5,70.0 50.2,70.0 50.8,69.9 51.4,69.7 52.0,69.6 52.7,69.5 53.3,69.4 53.9,69.5 54.5,69.6 55.2,69.7 55.8,69.8 56.4,69.9 57.1,70.0 57.7,70.0 58.3,70.0 58.9,70.0 59.6,70.0 60.2,70.0 60.8,69.9 61.4,69.8 62.1,69.6 62.7,69.3 63.3,68.9 63.9,68.6 64.6,68.4 65.2,68.4 65.8,68.6 66.5,69.0 67.1,69.5 67.7,69.9 68.3,70.0 69.0,69.6 69.6,68.5 70.2,66.9 70.8,64.7 71.5,62.3 72.1,60.1 72.7,58.5 73.4,58.0 74.0,58.7 74.6,60.5 75.2,63.2 75.9,66.1 76.5,68.6 77.1,69.9 77.7,69.4 78.4,66.8 79.0,62.2 79.6,56.2 80.3,49.6 80.9,43.7 81.5,39.5 82.1,37.9 82.8,39.4 83.4,43.8 84.0,50.4 84.6,57.8 85.3,64.5 85.9,68.9 86.5,69.9 87.1,66.8 87.8,59.8 88.4,50.0 89.0,38.9 89.7,28.5 90.3,20.7 90.9,17.1 91.5,18.5 92.2,24.6 92.8,34.4 93.4,46.1 94.0,57.3 94.7,65.8 95.3,69.8 95.9,68.4 96.6,61.7 97.2,50.8 97.8,37.6 98.4,24.7 99.1,14.4 99.7,8.7 100.3,8.7 100.9,14.4 101.6,24.7 102.2,37.6 102.8,50.8 103.4,61.7 104.1,68.4 104.7,69.8 105.3,65.8 106.0,57.3 106.6,46.1 107.2,34.4 107.8,24.6 108.5,18.5 109.1,17.1 109.7,20.7 110.3,28.5 111.0,38.9 111.6,50.0 112.2,59.8 112.9,66.8 113.5,69.9 114.1,68.9 114.7,64.5 115.4,57.8 116.0,50.4 116.6,43.8 117.2,39.4 117.9,37.9 118.5,39.5 119.1,43.7 119.7,49.6 120.4,56.2 121.0,62.2 121.6,66.8 122.3,69.4 122.9,69.9 123.5,68.6 124.1,66.1 124.8,63.2 125.4,60.5 126.0,58.7 126.6,58.0 127.3,58.5 127.9,60.1 128.5,62.3 129.2,64.7 129.8,66.9 130.4,68.5 131.0,69.6 131.7,70.0 132.3,69.9 132.9,69.5 133.5,69.0 134.2,68.6 134.8,68.4 135.4,68.4 136.1,68.6 136.7,68.9 137.3,69.3 137.9,69.6 138.6,69.8 139.2,69.9 139.8,70.0 140.4,70.0 141.1,70.0 141.7,70.0 142.3,70.0 142.9,70.0 143.6,69.9 144.2,69.8 144.8,69.7 145.5,69.6 146.1,69.5 146.7,69.4 147.3,69.5 148.0,69.6 148.6,69.7 149.2,69.9 149.8,70.0 150.5,70.0 151.1,69.8 151.7,69.4 152.4,68.9 153.0,68.4 153.6,67.9 154.2,67.6 154.9,67.5 155.5,67.6 156.1,68.0 156.7,68.5 157.4,69.1 158.0,69.6 158.6,69.9 159.2,70.0 159.9,69.8 160.5,69.4 161.1,68.8 161.8,68.2 162.4,67.7 163.0,67.4 163.6,67.3 164.3,67.5 164.9,67.9 165.5,68.5 166.1,69.0 166.8,69.5 167.4,69.9 168.0,70.0 168.7,70.0 169.3,69.8 169.9,69.5 170.5,69.2 171.2,69.0 171.8,68.9 172.4,68.9 173.0,69.0 173.7,69.2 174.3,69.4 174.9,69.6 175.5,69.8 176.2,69.9 176.8,70.0 177.4,70.0 178.1,70.0 178.7,70.0 179.3,69.9 179.9,69.9 180.6,69.9 181.2,70.0 181.8,70.0 182.4,70.0 183.1,70.0 183.7,70.0 184.3,70.0 185.0,70.0 185.6,70.0 186.2,70.0 186.8,70.0 187.5,70.0 188.1,69.9 188.7,69.9 189.3,69.8 190.0,69.7 190.6,69.6 191.2,69.6 191.8,69.6 192.5,69.6 193.1,69.7 193.7,69.8 194.4,69.9 195.0,70.0 195.6,70.0 196.2,69.9 196.9,69.8 197.5,69.6 198.1,69.4 198.7,69.2 199.4,69.1 200.0,69.0" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
-        <line x1="0" y1="70" x2="200" y2="70" stroke="var(--hair)" stroke-width="1"/>
+    <a class="card" href="./wat-is-een-golf.html">
+      <svg viewBox="0 0 200 74" role="img" aria-label="Een golf op het water, met een eendje op een golftop">
+        <path d="M0,40.0 L2,37.5 L4,35.2 L6,33.0 L8,31.0 L10,29.4 L12,28.2 L14,27.4 L16,27.0 L18,27.1 L20,27.7 L22,28.7 L24,30.2 L26,32.0 L28,34.0 L30,36.3 L32,38.8 L34,41.2 L36,43.7 L38,46.0 L40,48.0 L42,49.8 L44,51.3 L46,52.3 L48,52.9 L50,53.0 L52,52.6 L54,51.8 L56,50.6 L58,49.0 L60,47.0 L62,44.8 L64,42.5 L66,40.0 L68,37.5 L70,35.2 L72,33.0 L74,31.0 L76,29.4 L78,28.2 L80,27.4 L82,27.0 L84,27.1 L86,27.7 L88,28.7 L90,30.2 L92,32.0 L94,34.0 L96,36.3 L98,38.8 L100,41.2 L102,43.7 L104,46.0 L106,48.0 L108,49.8 L110,51.3 L112,52.3 L114,52.9 L116,53.0 L118,52.6 L120,51.8 L122,50.6 L124,49.0 L126,47.0 L128,44.8 L130,42.5 L132,40.0 L134,37.5 L136,35.2 L138,33.0 L140,31.0 L142,29.4 L144,28.2 L146,27.4 L148,27.0 L150,27.1 L152,27.7 L154,28.7 L156,30.2 L158,32.0 L160,34.0 L162,36.3 L164,38.8 L166,41.2 L168,43.7 L170,46.0 L172,48.0 L174,49.8 L176,51.3 L178,52.3 L180,52.9 L182,53.0 L184,52.6 L186,51.8 L188,50.6 L190,49.0 L192,47.0 L194,44.8 L196,42.5 L198,40.0 L200,37.5 L200,74 L0,74 Z" fill="var(--accent)" opacity="0.12"/>
+        <g transform="translate(148.5 27.5) scale(1.8)">
+          <polygon points="5.2,-2.2 8.2,-4.6 4.2,-3.8" fill="#f2c12e"/>
+          <ellipse cx="0" cy="-1.2" rx="6" ry="3.2" fill="#f2c12e"/>
+          <circle cx="-4" cy="-6" r="2.6" fill="#f2c12e"/>
+          <ellipse cx="1.2" cy="-2" rx="3" ry="1.4" fill="#d9a514" transform="rotate(-8.6 1.2 -2)"/>
+          <polygon points="-6.3,-6.5 -9,-5.7 -6.2,-5" fill="#e8771a"/>
+          <circle cx="-4.6" cy="-6.8" r="0.45" fill="#1a1a19"/>
+        </g>
+        <polyline points="0,40.0 2,37.5 4,35.2 6,33.0 8,31.0 10,29.4 12,28.2 14,27.4 16,27.0 18,27.1 20,27.7 22,28.7 24,30.2 26,32.0 28,34.0 30,36.3 32,38.8 34,41.2 36,43.7 38,46.0 40,48.0 42,49.8 44,51.3 46,52.3 48,52.9 50,53.0 52,52.6 54,51.8 56,50.6 58,49.0 60,47.0 62,44.8 64,42.5 66,40.0 68,37.5 70,35.2 72,33.0 74,31.0 76,29.4 78,28.2 80,27.4 82,27.0 84,27.1 86,27.7 88,28.7 90,30.2 92,32.0 94,34.0 96,36.3 98,38.8 100,41.2 102,43.7 104,46.0 106,48.0 108,49.8 110,51.3 112,52.3 114,52.9 116,53.0 118,52.6 120,51.8 122,50.6 124,49.0 126,47.0 128,44.8 130,42.5 132,40.0 134,37.5 136,35.2 138,33.0 140,31.0 142,29.4 144,28.2 146,27.4 148,27.0 150,27.1 152,27.7 154,28.7 156,30.2 158,32.0 160,34.0 162,36.3 164,38.8 166,41.2 168,43.7 170,46.0 172,48.0 174,49.8 176,51.3 178,52.3 180,52.9 182,53.0 184,52.6 186,51.8 188,50.6 190,49.0 192,47.0 194,44.8 196,42.5 198,40.0 200,37.5" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
       </svg>
-      <h2>Interference &amp; diffraction of light</h2>
-      <p>The far-field pattern of a double slit, as you change the wavelength, the slit width, the
-         separation and the distance to the screen. Watch orders go missing.</p>
+      <h2>Wat is een golf?</h2>
+      <p>Maak de golven hoger of langer en kijk naar het eendje: het gaat op en neer,
+         maar reist niet mee. Begin hier!</p>
     </a>
 
-    <a class="card" href="./water-waves.html">
-      <svg viewBox="0 0 200 74" role="img" aria-label="Circular wavefronts spreading from two slits in a barrier">
-        <g clip-path="url(#below)" fill="none" stroke="var(--accent-2)" stroke-width="1.1" opacity="0.75">
+    <a class="card" href="./watergolven.html">
+      <svg viewBox="0 0 200 74" role="img" aria-label="Cirkelvormige golven die uit twee openingen in een muur komen">
+        <g clip-path="url(#below-nl)" fill="none" stroke="var(--accent-2)" stroke-width="1.1" opacity="0.75">
         <circle cx="74" cy="66" r="7" />
         <circle cx="74" cy="66" r="16" />
         <circle cx="74" cy="66" r="25" />
@@ -106,23 +149,146 @@
         <circle cx="126" cy="66" r="79" />
         <circle cx="126" cy="66" r="88" />
         </g>
-        <clipPath id="below"><rect x="0" y="0" width="200" height="63"/></clipPath>
+        <clipPath id="below-nl"><rect x="0" y="0" width="200" height="63"/></clipPath>
         <g stroke="var(--muted)" stroke-width="3.4">
           <line x1="0" y1="65" x2="68" y2="65"/>
           <line x1="80" y1="65" x2="120" y2="65"/>
           <line x1="132" y1="65" x2="200" y2="65"/>
         </g>
       </svg>
-      <h2>A ripple tank you can start</h2>
-      <p>Plane waves hit a barrier with two gaps and the circular wavelets beyond it cross and
-         add. Press play and vary the gap between the slits.</p>
+      <h2>Watergolven door twee openingen</h2>
+      <p>Golven rollen tegen een muur met twee openingen en waaieren erachter uit in
+         cirkels. Waar ze elkaar kruisen, deint het water extra hard of blijft het helemaal
+         stil.</p>
+    </a>
+
+    <a class="card" href="./dubbele-spleet.html">
+      <svg viewBox="0 0 200 74" role="img" aria-label="Het patroon van lichte en donkere strepen achter twee spleetjes">
+        <polyline points="0.0,69.0 0.6,69.1 1.3,69.2 1.9,69.4 2.5,69.6 3.1,69.8 3.8,69.9 4.4,70.0 5.0,70.0 5.6,69.9 6.3,69.8 6.9,69.7 7.5,69.6 8.2,69.6 8.8,69.6 9.4,69.6 10.0,69.7 10.7,69.8 11.3,69.9 11.9,69.9 12.5,70.0 13.2,70.0 13.8,70.0 14.4,70.0 15.0,70.0 15.7,70.0 16.3,70.0 16.9,70.0 17.6,70.0 18.2,70.0 18.8,70.0 19.4,69.9 20.1,69.9 20.7,69.9 21.3,70.0 21.9,70.0 22.6,70.0 23.2,70.0 23.8,69.9 24.5,69.8 25.1,69.6 25.7,69.4 26.3,69.2 27.0,69.0 27.6,68.9 28.2,68.9 28.8,69.0 29.5,69.2 30.1,69.5 30.7,69.8 31.3,70.0 32.0,70.0 32.6,69.9 33.2,69.5 33.9,69.0 34.5,68.5 35.1,67.9 35.7,67.5 36.4,67.3 37.0,67.4 37.6,67.7 38.2,68.2 38.9,68.8 39.5,69.4 40.1,69.8 40.8,70.0 41.4,69.9 42.0,69.6 42.6,69.1 43.3,68.5 43.9,68.0 44.5,67.6 45.1,67.5 45.8,67.6 46.4,67.9 47.0,68.4 47.6,68.9 48.3,69.4 48.9,69.8 49.5,70.0 50.2,70.0 50.8,69.9 51.4,69.7 52.0,69.6 52.7,69.5 53.3,69.4 53.9,69.5 54.5,69.6 55.2,69.7 55.8,69.8 56.4,69.9 57.1,70.0 57.7,70.0 58.3,70.0 58.9,70.0 59.6,70.0 60.2,70.0 60.8,69.9 61.4,69.8 62.1,69.6 62.7,69.3 63.3,68.9 63.9,68.6 64.6,68.4 65.2,68.4 65.8,68.6 66.5,69.0 67.1,69.5 67.7,69.9 68.3,70.0 69.0,69.6 69.6,68.5 70.2,66.9 70.8,64.7 71.5,62.3 72.1,60.1 72.7,58.5 73.4,58.0 74.0,58.7 74.6,60.5 75.2,63.2 75.9,66.1 76.5,68.6 77.1,69.9 77.7,69.4 78.4,66.8 79.0,62.2 79.6,56.2 80.3,49.6 80.9,43.7 81.5,39.5 82.1,37.9 82.8,39.4 83.4,43.8 84.0,50.4 84.6,57.8 85.3,64.5 85.9,68.9 86.5,69.9 87.1,66.8 87.8,59.8 88.4,50.0 89.0,38.9 89.7,28.5 90.3,20.7 90.9,17.1 91.5,18.5 92.2,24.6 92.8,34.4 93.4,46.1 94.0,57.3 94.7,65.8 95.3,69.8 95.9,68.4 96.6,61.7 97.2,50.8 97.8,37.6 98.4,24.7 99.1,14.4 99.7,8.7 100.3,8.7 100.9,14.4 101.6,24.7 102.2,37.6 102.8,50.8 103.4,61.7 104.1,68.4 104.7,69.8 105.3,65.8 106.0,57.3 106.6,46.1 107.2,34.4 107.8,24.6 108.5,18.5 109.1,17.1 109.7,20.7 110.3,28.5 111.0,38.9 111.6,50.0 112.2,59.8 112.9,66.8 113.5,69.9 114.1,68.9 114.7,64.5 115.4,57.8 116.0,50.4 116.6,43.8 117.2,39.4 117.9,37.9 118.5,39.5 119.1,43.7 119.7,49.6 120.4,56.2 121.0,62.2 121.6,66.8 122.3,69.4 122.9,69.9 123.5,68.6 124.1,66.1 124.8,63.2 125.4,60.5 126.0,58.7 126.6,58.0 127.3,58.5 127.9,60.1 128.5,62.3 129.2,64.7 129.8,66.9 130.4,68.5 131.0,69.6 131.7,70.0 132.3,69.9 132.9,69.5 133.5,69.0 134.2,68.6 134.8,68.4 135.4,68.4 136.1,68.6 136.7,68.9 137.3,69.3 137.9,69.6 138.6,69.8 139.2,69.9 139.8,70.0 140.4,70.0 141.1,70.0 141.7,70.0 142.3,70.0 142.9,70.0 143.6,69.9 144.2,69.8 144.8,69.7 145.5,69.6 146.1,69.5 146.7,69.4 147.3,69.5 148.0,69.6 148.6,69.7 149.2,69.9 149.8,70.0 150.5,70.0 151.1,69.8 151.7,69.4 152.4,68.9 153.0,68.4 153.6,67.9 154.2,67.6 154.9,67.5 155.5,67.6 156.1,68.0 156.7,68.5 157.4,69.1 158.0,69.6 158.6,69.9 159.2,70.0 159.9,69.8 160.5,69.4 161.1,68.8 161.8,68.2 162.4,67.7 163.0,67.4 163.6,67.3 164.3,67.5 164.9,67.9 165.5,68.5 166.1,69.0 166.8,69.5 167.4,69.9 168.0,70.0 168.7,70.0 169.3,69.8 169.9,69.5 170.5,69.2 171.2,69.0 171.8,68.9 172.4,68.9 173.0,69.0 173.7,69.2 174.3,69.4 174.9,69.6 175.5,69.8 176.2,69.9 176.8,70.0 177.4,70.0 178.1,70.0 178.7,70.0 179.3,69.9 179.9,69.9 180.6,69.9 181.2,70.0 181.8,70.0 182.4,70.0 183.1,70.0 183.7,70.0 184.3,70.0 185.0,70.0 185.6,70.0 186.2,70.0 186.8,70.0 187.5,70.0 188.1,69.9 188.7,69.9 189.3,69.8 190.0,69.7 190.6,69.6 191.2,69.6 191.8,69.6 192.5,69.6 193.1,69.7 193.7,69.8 194.4,69.9 195.0,70.0 195.6,70.0 196.2,69.9 196.9,69.8 197.5,69.6 198.1,69.4 198.7,69.2 199.4,69.1 200.0,69.0" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+        <line x1="0" y1="70" x2="200" y2="70" stroke="var(--hair)" stroke-width="1"/>
+      </svg>
+      <h2>Licht door twee smalle spleetjes</h2>
+      <p>Laat gekleurd licht door twee spleetjes schijnen die dunner zijn dan een haar,
+         en er verschijnt een rij lichte en donkere strepen. Kun jij strepen laten
+         verdwijnen?</p>
     </a>
   </div>
 
   <p class="note">
-    Made with <a href="https://marimo.io" style="color: var(--accent)">marimo</a>, exported to
-    WebAssembly. Source: <code>double_slit.py</code> and <code>water_waves.py</code>.
+    Gemaakt met <a href="https://marimo.io" style="color: var(--accent)">marimo</a>,
+    omgezet naar WebAssembly. Broncode: <code>what_is_a_wave.py</code>,
+    <code>water_waves.py</code> en <code>double_slit.py</code>.
   </p>
+  </div>
+
+  <div class="l10n" lang="en">
+  <h1>Playing with waves</h1>
+  <p class="lede">
+    What is a wave, anyway? And what happens when water, or light, squeezes through
+    two tiny gaps? Here are three experiments to play with, made for the Weekend of Science. They
+    run right here in your browser; the first time you open one, it takes a few seconds to get
+    going.
+  </p>
+
+  <div class="cards">
+    <a class="card" href="./what-is-a-wave.html">
+      <svg viewBox="0 0 200 74" role="img" aria-label="A wave on the water, with a duck riding on a crest">
+        <path d="M0,40.0 L2,37.5 L4,35.2 L6,33.0 L8,31.0 L10,29.4 L12,28.2 L14,27.4 L16,27.0 L18,27.1 L20,27.7 L22,28.7 L24,30.2 L26,32.0 L28,34.0 L30,36.3 L32,38.8 L34,41.2 L36,43.7 L38,46.0 L40,48.0 L42,49.8 L44,51.3 L46,52.3 L48,52.9 L50,53.0 L52,52.6 L54,51.8 L56,50.6 L58,49.0 L60,47.0 L62,44.8 L64,42.5 L66,40.0 L68,37.5 L70,35.2 L72,33.0 L74,31.0 L76,29.4 L78,28.2 L80,27.4 L82,27.0 L84,27.1 L86,27.7 L88,28.7 L90,30.2 L92,32.0 L94,34.0 L96,36.3 L98,38.8 L100,41.2 L102,43.7 L104,46.0 L106,48.0 L108,49.8 L110,51.3 L112,52.3 L114,52.9 L116,53.0 L118,52.6 L120,51.8 L122,50.6 L124,49.0 L126,47.0 L128,44.8 L130,42.5 L132,40.0 L134,37.5 L136,35.2 L138,33.0 L140,31.0 L142,29.4 L144,28.2 L146,27.4 L148,27.0 L150,27.1 L152,27.7 L154,28.7 L156,30.2 L158,32.0 L160,34.0 L162,36.3 L164,38.8 L166,41.2 L168,43.7 L170,46.0 L172,48.0 L174,49.8 L176,51.3 L178,52.3 L180,52.9 L182,53.0 L184,52.6 L186,51.8 L188,50.6 L190,49.0 L192,47.0 L194,44.8 L196,42.5 L198,40.0 L200,37.5 L200,74 L0,74 Z" fill="var(--accent)" opacity="0.12"/>
+        <g transform="translate(148.5 27.5) scale(1.8)">
+          <polygon points="5.2,-2.2 8.2,-4.6 4.2,-3.8" fill="#f2c12e"/>
+          <ellipse cx="0" cy="-1.2" rx="6" ry="3.2" fill="#f2c12e"/>
+          <circle cx="-4" cy="-6" r="2.6" fill="#f2c12e"/>
+          <ellipse cx="1.2" cy="-2" rx="3" ry="1.4" fill="#d9a514" transform="rotate(-8.6 1.2 -2)"/>
+          <polygon points="-6.3,-6.5 -9,-5.7 -6.2,-5" fill="#e8771a"/>
+          <circle cx="-4.6" cy="-6.8" r="0.45" fill="#1a1a19"/>
+        </g>
+        <polyline points="0,40.0 2,37.5 4,35.2 6,33.0 8,31.0 10,29.4 12,28.2 14,27.4 16,27.0 18,27.1 20,27.7 22,28.7 24,30.2 26,32.0 28,34.0 30,36.3 32,38.8 34,41.2 36,43.7 38,46.0 40,48.0 42,49.8 44,51.3 46,52.3 48,52.9 50,53.0 52,52.6 54,51.8 56,50.6 58,49.0 60,47.0 62,44.8 64,42.5 66,40.0 68,37.5 70,35.2 72,33.0 74,31.0 76,29.4 78,28.2 80,27.4 82,27.0 84,27.1 86,27.7 88,28.7 90,30.2 92,32.0 94,34.0 96,36.3 98,38.8 100,41.2 102,43.7 104,46.0 106,48.0 108,49.8 110,51.3 112,52.3 114,52.9 116,53.0 118,52.6 120,51.8 122,50.6 124,49.0 126,47.0 128,44.8 130,42.5 132,40.0 134,37.5 136,35.2 138,33.0 140,31.0 142,29.4 144,28.2 146,27.4 148,27.0 150,27.1 152,27.7 154,28.7 156,30.2 158,32.0 160,34.0 162,36.3 164,38.8 166,41.2 168,43.7 170,46.0 172,48.0 174,49.8 176,51.3 178,52.3 180,52.9 182,53.0 184,52.6 186,51.8 188,50.6 190,49.0 192,47.0 194,44.8 196,42.5 198,40.0 200,37.5" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+      </svg>
+      <h2>What is a wave?</h2>
+      <p>Make the waves taller or longer and watch the duck: it bobs up and down, but
+         never travels along. Start here!</p>
+    </a>
+
+    <a class="card" href="./water-waves.html">
+      <svg viewBox="0 0 200 74" role="img" aria-label="Circular wavefronts spreading from two slits in a barrier">
+        <g clip-path="url(#below-en)" fill="none" stroke="var(--accent-2)" stroke-width="1.1" opacity="0.75">
+        <circle cx="74" cy="66" r="7" />
+        <circle cx="74" cy="66" r="16" />
+        <circle cx="74" cy="66" r="25" />
+        <circle cx="74" cy="66" r="34" />
+        <circle cx="74" cy="66" r="43" />
+        <circle cx="74" cy="66" r="52" />
+        <circle cx="74" cy="66" r="61" />
+        <circle cx="74" cy="66" r="70" />
+        <circle cx="74" cy="66" r="79" />
+        <circle cx="74" cy="66" r="88" />
+        <circle cx="126" cy="66" r="7" />
+        <circle cx="126" cy="66" r="16" />
+        <circle cx="126" cy="66" r="25" />
+        <circle cx="126" cy="66" r="34" />
+        <circle cx="126" cy="66" r="43" />
+        <circle cx="126" cy="66" r="52" />
+        <circle cx="126" cy="66" r="61" />
+        <circle cx="126" cy="66" r="70" />
+        <circle cx="126" cy="66" r="79" />
+        <circle cx="126" cy="66" r="88" />
+        </g>
+        <clipPath id="below-en"><rect x="0" y="0" width="200" height="63"/></clipPath>
+        <g stroke="var(--muted)" stroke-width="3.4">
+          <line x1="0" y1="65" x2="68" y2="65"/>
+          <line x1="80" y1="65" x2="120" y2="65"/>
+          <line x1="132" y1="65" x2="200" y2="65"/>
+        </g>
+      </svg>
+      <h2>Water waves through two gaps</h2>
+      <p>Waves roll into a wall with two gaps and spread out in circles behind it. Where
+         they cross, the water either bobs up and down extra hard or stays completely
+         still.</p>
+    </a>
+
+    <a class="card" href="./double-slit.html">
+      <svg viewBox="0 0 200 74" role="img" aria-label="Double-slit intensity pattern with its diffraction envelope">
+        <polyline points="0.0,69.0 0.6,69.1 1.3,69.2 1.9,69.4 2.5,69.6 3.1,69.8 3.8,69.9 4.4,70.0 5.0,70.0 5.6,69.9 6.3,69.8 6.9,69.7 7.5,69.6 8.2,69.6 8.8,69.6 9.4,69.6 10.0,69.7 10.7,69.8 11.3,69.9 11.9,69.9 12.5,70.0 13.2,70.0 13.8,70.0 14.4,70.0 15.0,70.0 15.7,70.0 16.3,70.0 16.9,70.0 17.6,70.0 18.2,70.0 18.8,70.0 19.4,69.9 20.1,69.9 20.7,69.9 21.3,70.0 21.9,70.0 22.6,70.0 23.2,70.0 23.8,69.9 24.5,69.8 25.1,69.6 25.7,69.4 26.3,69.2 27.0,69.0 27.6,68.9 28.2,68.9 28.8,69.0 29.5,69.2 30.1,69.5 30.7,69.8 31.3,70.0 32.0,70.0 32.6,69.9 33.2,69.5 33.9,69.0 34.5,68.5 35.1,67.9 35.7,67.5 36.4,67.3 37.0,67.4 37.6,67.7 38.2,68.2 38.9,68.8 39.5,69.4 40.1,69.8 40.8,70.0 41.4,69.9 42.0,69.6 42.6,69.1 43.3,68.5 43.9,68.0 44.5,67.6 45.1,67.5 45.8,67.6 46.4,67.9 47.0,68.4 47.6,68.9 48.3,69.4 48.9,69.8 49.5,70.0 50.2,70.0 50.8,69.9 51.4,69.7 52.0,69.6 52.7,69.5 53.3,69.4 53.9,69.5 54.5,69.6 55.2,69.7 55.8,69.8 56.4,69.9 57.1,70.0 57.7,70.0 58.3,70.0 58.9,70.0 59.6,70.0 60.2,70.0 60.8,69.9 61.4,69.8 62.1,69.6 62.7,69.3 63.3,68.9 63.9,68.6 64.6,68.4 65.2,68.4 65.8,68.6 66.5,69.0 67.1,69.5 67.7,69.9 68.3,70.0 69.0,69.6 69.6,68.5 70.2,66.9 70.8,64.7 71.5,62.3 72.1,60.1 72.7,58.5 73.4,58.0 74.0,58.7 74.6,60.5 75.2,63.2 75.9,66.1 76.5,68.6 77.1,69.9 77.7,69.4 78.4,66.8 79.0,62.2 79.6,56.2 80.3,49.6 80.9,43.7 81.5,39.5 82.1,37.9 82.8,39.4 83.4,43.8 84.0,50.4 84.6,57.8 85.3,64.5 85.9,68.9 86.5,69.9 87.1,66.8 87.8,59.8 88.4,50.0 89.0,38.9 89.7,28.5 90.3,20.7 90.9,17.1 91.5,18.5 92.2,24.6 92.8,34.4 93.4,46.1 94.0,57.3 94.7,65.8 95.3,69.8 95.9,68.4 96.6,61.7 97.2,50.8 97.8,37.6 98.4,24.7 99.1,14.4 99.7,8.7 100.3,8.7 100.9,14.4 101.6,24.7 102.2,37.6 102.8,50.8 103.4,61.7 104.1,68.4 104.7,69.8 105.3,65.8 106.0,57.3 106.6,46.1 107.2,34.4 107.8,24.6 108.5,18.5 109.1,17.1 109.7,20.7 110.3,28.5 111.0,38.9 111.6,50.0 112.2,59.8 112.9,66.8 113.5,69.9 114.1,68.9 114.7,64.5 115.4,57.8 116.0,50.4 116.6,43.8 117.2,39.4 117.9,37.9 118.5,39.5 119.1,43.7 119.7,49.6 120.4,56.2 121.0,62.2 121.6,66.8 122.3,69.4 122.9,69.9 123.5,68.6 124.1,66.1 124.8,63.2 125.4,60.5 126.0,58.7 126.6,58.0 127.3,58.5 127.9,60.1 128.5,62.3 129.2,64.7 129.8,66.9 130.4,68.5 131.0,69.6 131.7,70.0 132.3,69.9 132.9,69.5 133.5,69.0 134.2,68.6 134.8,68.4 135.4,68.4 136.1,68.6 136.7,68.9 137.3,69.3 137.9,69.6 138.6,69.8 139.2,69.9 139.8,70.0 140.4,70.0 141.1,70.0 141.7,70.0 142.3,70.0 142.9,70.0 143.6,69.9 144.2,69.8 144.8,69.7 145.5,69.6 146.1,69.5 146.7,69.4 147.3,69.5 148.0,69.6 148.6,69.7 149.2,69.9 149.8,70.0 150.5,70.0 151.1,69.8 151.7,69.4 152.4,68.9 153.0,68.4 153.6,67.9 154.2,67.6 154.9,67.5 155.5,67.6 156.1,68.0 156.7,68.5 157.4,69.1 158.0,69.6 158.6,69.9 159.2,70.0 159.9,69.8 160.5,69.4 161.1,68.8 161.8,68.2 162.4,67.7 163.0,67.4 163.6,67.3 164.3,67.5 164.9,67.9 165.5,68.5 166.1,69.0 166.8,69.5 167.4,69.9 168.0,70.0 168.7,70.0 169.3,69.8 169.9,69.5 170.5,69.2 171.2,69.0 171.8,68.9 172.4,68.9 173.0,69.0 173.7,69.2 174.3,69.4 174.9,69.6 175.5,69.8 176.2,69.9 176.8,70.0 177.4,70.0 178.1,70.0 178.7,70.0 179.3,69.9 179.9,69.9 180.6,69.9 181.2,70.0 181.8,70.0 182.4,70.0 183.1,70.0 183.7,70.0 184.3,70.0 185.0,70.0 185.6,70.0 186.2,70.0 186.8,70.0 187.5,70.0 188.1,69.9 188.7,69.9 189.3,69.8 190.0,69.7 190.6,69.6 191.2,69.6 191.8,69.6 192.5,69.6 193.1,69.7 193.7,69.8 194.4,69.9 195.0,70.0 195.6,70.0 196.2,69.9 196.9,69.8 197.5,69.6 198.1,69.4 198.7,69.2 199.4,69.1 200.0,69.0" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+        <line x1="0" y1="70" x2="200" y2="70" stroke="var(--hair)" stroke-width="1"/>
+      </svg>
+      <h2>Light through two tiny slits</h2>
+      <p>Shine coloured light through two slits thinner than a hair, and a row of bright
+         and dark stripes appears. Can you make some of the stripes vanish?</p>
+    </a>
+  </div>
+
+  <p class="note">
+    Made with <a href="https://marimo.io" style="color: var(--accent)">marimo</a>,
+    exported to WebAssembly. Source: <code>what_is_a_wave.py</code>,
+    <code>water_waves.py</code> and <code>double_slit.py</code>.
+  </p>
+  </div>
 </main>
+<script>
+  (function () {
+    var TITLES = { nl: "Spelen met golven", en: "Playing with waves" };
+    var root = document.documentElement;
+    var buttons = document.querySelectorAll("[data-set-lang]");
+
+    function show(lang) {
+      root.setAttribute("data-lang", lang);
+      root.lang = lang;
+      document.title = TITLES[lang];
+      for (var i = 0; i < buttons.length; i++) {
+        var on = buttons[i].getAttribute("data-set-lang") === lang;
+        buttons[i].setAttribute("aria-pressed", on ? "true" : "false");
+      }
+    }
+
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].addEventListener("click", function () {
+        var lang = this.getAttribute("data-set-lang");
+        try { localStorage.setItem("lang", lang); } catch (err) { /* not remembered, still shown */ }
+        show(lang);
+      });
+    }
+    show(root.getAttribute("data-lang") === "en" ? "en" : "nl");
+  })();
+</script>
 </body>
 </html>
