@@ -11,9 +11,11 @@ NOTEBOOKS=(
   "what-is-a-wave:what_is_a_wave.py:en"
   "water-waves:water_waves.py:en"
   "double-slit:double_slit.py:en"
+  "measurement-logbook:measurement_logbook.py:en"
   "wat-is-een-golf:what_is_a_wave.py:nl"
   "watergolven:water_waves.py:nl"
   "dubbele-spleet:double_slit.py:nl"
+  "meetlogboek:measurement_logbook.py:nl"
 )
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
