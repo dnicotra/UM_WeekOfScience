@@ -3,3 +3,5 @@ __pycache__/
 .venv/
 site/
 __marimo__/
+# the logbook's own file, written next to the notebook when it runs locally
+measurement_logbook.json*
